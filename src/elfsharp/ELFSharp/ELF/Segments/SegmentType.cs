@@ -8,7 +8,10 @@ namespace ELFSharp.ELF.Segments
 		Interpreter,
 		Note,
 		SharedLibrary,
-		ProgramHeader		
-	}
+		ProgramHeader,
+	    GNUStack = 0x6474E551,
+	    GNURELRO,
+        ARMEXIDX = 0x70000001,
+    }
 }
 

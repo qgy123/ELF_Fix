@@ -27,6 +27,9 @@ namespace ELF_Fix
                         var myElf = new MyELF<Int32>(path);
                         myElf.ReadAndFixHeader();
                         myElf.PrintHeaderInfo();
+                        myElf.ReadSegmentHeaders();
+                        myElf.PrintSegmentHeaderInfo();
+                        myElf.RebuildSegmentByLoad();
                         break;
                     case Class.Bit64:
                         Console.WriteLine("64Bit Elf is not support currently!");

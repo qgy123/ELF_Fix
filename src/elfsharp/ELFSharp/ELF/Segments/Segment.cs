@@ -6,7 +6,7 @@ namespace ELFSharp.ELF.Segments
 {
     public sealed class Segment<T> : ISegment
     {
-        internal Segment(long headerOffset, Class elfClass, Func<SimpleEndianessAwareReader> readerSource)
+        public Segment(long headerOffset, Class elfClass, Func<SimpleEndianessAwareReader> readerSource)
         {            
             this.readerSource = readerSource;			
             this.headerOffset = headerOffset;

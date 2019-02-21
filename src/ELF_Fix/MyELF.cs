@@ -9,9 +9,10 @@ using Syroot.BinaryData;
 
 namespace ELF_Fix
 {
-    public class MyELF<T>/* : ELF<T> where T : struct*/
+    public class MyELF<T>/* : ELF<T>*/ where T : struct
     {
         public string Path { get; }
+        public long FileSize { get; }
         public string FixPath { get; }
 
         public Class Class { get; private set; }
@@ -24,6 +25,7 @@ namespace ELF_Fix
         private readonly FileStream stream;
         private readonly FileStream streamNeedFix;
         private readonly BinaryStream binaryWriter;
+        private readonly BinaryStream binaryReader;
 
         private Int64 segmentHeaderOffset;
         private Int64 sectionHeaderOffset;
@@ -35,12 +37,15 @@ namespace ELF_Fix
         private UInt16 stringTableIndex;
         private Func<SimpleEndianessAwareReader> readerSource;
         private Func<SimpleEndianessAwareReader> localReaderSource;
+        private List<Segment<T>> segments;
 
         public MyELF(string path)
         {
             Path = path;
             FixPath = path + "_fixed";
             stream = GetNewStream();
+            binaryReader = new BinaryStream(stream);
+            FileSize = new FileInfo(path).Length;
             if (File.Exists(FixPath))
             {
                 File.Delete(FixPath);
@@ -49,11 +54,86 @@ namespace ELF_Fix
 
             streamNeedFix = GetRwStream();
             binaryWriter = new BinaryStream(streamNeedFix);
-            
             //ReadAndFixHeader();
             //ReadStringTable();
             //ReadSections();
             //ReadSegmentHeaders();
+        }
+
+        public void RebuildSegmentByLoad()
+        {
+            for (var index = 0; index < segments.Count; index++)
+            {
+                var segment = segments[index];
+                if (segment.Type == SegmentType.Load) //.text
+                {
+                    var segOffset1 = segment.Offset;
+                    var segFileLen1 = segment.FileSize;
+
+                    var nextSegment = segments[index + 1];
+
+                    if (nextSegment.Type == SegmentType.Load) //.data
+                    {
+                        var segOffset2 = nextSegment.Offset;
+                        var segVaddr2 = long.Parse(nextSegment.Address.ToString());
+                        var segPhddr2 = long.Parse(nextSegment.PhysicalAddress.ToString());
+                        var segFileLen2 = nextSegment.FileSize;
+
+                        Console.WriteLine("Begin to rebuild Segments...");
+                        if (segFileLen2 + segVaddr2 <= FileSize)
+                        {
+                            binaryWriter.Position = segFileLen1;
+
+                            for (int i = 0; i < segOffset2 - (segOffset1 + segFileLen1); i++)
+                            {
+                                binaryWriter.Write(0);
+                            }
+
+                            binaryReader.Position = segPhddr2;
+
+                            for (int i = 0; i < segFileLen2; i++)
+                            {
+                                var b = binaryReader.Read1Byte();
+                                binaryWriter.Write(b);
+                            }
+                            //Todo: Clean the EOF
+
+                            Console.WriteLine("Segment Rebuild successed!");
+                            return;
+                        }
+                    }
+
+                    throw new Exception("Load Segment cannot be located, fail to fix! Please verify the program table is corrected!");
+
+                }
+
+            }
+            throw new Exception("Fail to find Load Segment in Program table! Please verify the program table is corrected!");
+
+        }
+
+        public void PrintSegmentHeaderInfo()
+        {
+            Console.WriteLine("Elf Segments:");
+            Console.WriteLine("-> Type \tOffset \tAddress \tPhysical Address \tFileSize \tFlags \tAlignment");
+            foreach (var segment in segments)
+            {
+                Console.WriteLine($"-> {segment.Type} \t{segment.Offset} \t{segment.Address} \t{segment.PhysicalAddress} \t{segment.FileSize} \t{segment.Flags} \t{segment.Alignment}");
+            }
+        }
+
+        public void ReadSegmentHeaders()
+        {
+            segments = new List<Segment<T>>(segmentHeaderEntryCount);
+            for (var i = 0u; i < segmentHeaderEntryCount; i++)
+            {
+                var segment = new Segment<T>(
+                    segmentHeaderOffset + i * segmentHeaderEntrySize,
+                    Class,
+                    readerSource
+                );
+                segments.Add(segment);
+            }
         }
 
         public void PrintHeaderInfo()
@@ -66,7 +146,7 @@ namespace ELF_Fix
             Console.WriteLine($"->EntryPoint: {EntryPoint}");
             Console.WriteLine($"->MachineFlags: {MachineFlags}");
             Console.WriteLine();
-            Console.WriteLine($"->Program Header Size(e_phoff): {segmentHeaderOffset}");
+            Console.WriteLine($"->Program Header Offset(e_phoff): {segmentHeaderOffset}");
             Console.WriteLine($"->Section Header Offset(e_shoff): {sectionHeaderOffset}");
             Console.WriteLine($"->Elf Header Size(e_ehsize): {elfHeaderSize}");
             Console.WriteLine($"->Program Header Entry Size(e_phentsize): {segmentHeaderEntrySize}");
@@ -168,7 +248,7 @@ namespace ELF_Fix
         {
             return new FileStream(
                 FixPath,
-                FileMode.Create,
+                FileMode.Open,
                 FileAccess.ReadWrite,
                 FileShare.None
             );
@@ -177,6 +257,8 @@ namespace ELF_Fix
         public void Dispose()
         {
             stream.Close();
+            binaryReader.Close();
+            binaryWriter.Close();
         }
     }
 }
