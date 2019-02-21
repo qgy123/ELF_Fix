@@ -86,7 +86,7 @@ namespace ELF_Fix
 
                             for (int i = 0; i < segOffset2 - (segOffset1 + segFileLen1); i++)
                             {
-                                binaryWriter.Write(0);
+                                binaryWriter.WriteByte(0);
                             }
 
                             binaryReader.Position = segPhddr2;
@@ -94,7 +94,7 @@ namespace ELF_Fix
                             for (int i = 0; i < segFileLen2; i++)
                             {
                                 var b = binaryReader.Read1Byte();
-                                binaryWriter.Write(b);
+                                binaryWriter.WriteByte(b);
                             }
                             //Todo: Clean the EOF
 
@@ -108,7 +108,7 @@ namespace ELF_Fix
                 }
 
             }
-            throw new Exception("Fail to find Load Segment in Program table! Please verify the program table is corrected!");
+            throw new Exception("Fail to find Load Segments in Program table! Please verify the program table is corrected!");
 
         }
 

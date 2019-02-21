@@ -34,11 +34,9 @@ namespace ELF_Fix
                     case Class.Bit64:
                         Console.WriteLine("64Bit Elf is not support currently!");
                         return;
-                        break;
                     case Class.NotELF:
                         Console.WriteLine("Given File is not a valid Elf! Make sure the magic is correct!");
                         return;
-                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -53,7 +51,8 @@ namespace ELF_Fix
         static void PrintInfo()
         {
             Console.WriteLine("\'    _____  _      _____   _____  ___ __  __ _____  ____  \r\n\'   | ____|| |    |  ___| |  ___||_ _|\\ \\/ /| ____||  _ \\ \r\n\'   |  _|  | |    | |_    | |_    | |  \\  / |  _|  | |_) |\r\n\'   | |___ | |___ |  _|   |  _|   | |  /  \\ | |___ |  _ < \r\n\'   |_____||_____||_|     |_|    |___|/_/\\_\\|_____||_| \\_\\\r\n\'                                                         ");
-            Console.WriteLine("Author: Yueluo");
+            Console.WriteLine("Author: YueLuo");
+            Console.WriteLine("QQ: 578903564");
             Console.WriteLine();
             Console.WriteLine("Please drag your Elf file here:");
         }
