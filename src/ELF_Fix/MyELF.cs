@@ -76,12 +76,13 @@ namespace ELF_Fix
                     {
                         var segOffset2 = nextSegment.Offset;
                         var segVaddr2 = long.Parse(nextSegment.Address.ToString());
-                        var segPhddr2 = long.Parse(nextSegment.PhysicalAddress.ToString());
+                        //var segPhddr2 = long.Parse(nextSegment.PhysicalAddress.ToString());
                         var segFileLen2 = nextSegment.FileSize;
 
-                        Console.WriteLine("Begin to rebuild Segments...");
                         if (segFileLen2 + segVaddr2 <= FileSize)
                         {
+                            Console.WriteLine("Begin to rebuild Segments...");
+
                             binaryWriter.Position = segFileLen1;
 
                             for (int i = 0; i < segOffset2 - (segOffset1 + segFileLen1); i++)
@@ -89,7 +90,7 @@ namespace ELF_Fix
                                 binaryWriter.WriteByte(0);
                             }
 
-                            binaryReader.Position = segPhddr2;
+                            binaryReader.Position = segVaddr2;
 
                             for (int i = 0; i < segFileLen2; i++)
                             {
@@ -99,6 +100,11 @@ namespace ELF_Fix
                             //Todo: Clean the EOF
 
                             Console.WriteLine("Segment Rebuild successed!");
+                            return;
+                        }
+                        else
+                        {
+                            Console.WriteLine("No need to fix Load segment!");
                             return;
                         }
                     }
